@@ -155,7 +155,7 @@ async def health_check():
 @app.get("/api/coffee/{cafe_id}/rule", status_code=200, response_model=List[RuleRead])
 async def get_coffee_rule(cafe_id: int, db: Session = Depends(database.get_db)) -> dict:
     rules = db.query(CollectRule).filter(CollectRule.cafe_id == cafe_id).all()
-    if rules is None:
+    if not rules:
         raise HTTPException(status_code=404, detail="User not found")
 
     return rules

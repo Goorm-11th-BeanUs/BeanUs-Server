@@ -60,7 +60,7 @@ Accept: application/json
 
 ###
 
-GET http://kdbda913f9220a.user-app.krampoline.com/api/coffee/357310/rule
+GET http://kdbda913f9220a.user-app.krampoline.com/api/coffee/7/rule
 Accept: application/json
 
 
