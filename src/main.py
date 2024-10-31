@@ -44,6 +44,7 @@ class HistoryRead(BaseModel):
     cafe_id: int
     client_name: str
     time: datetime
+    status: str
     amount: int
 
     class Config:

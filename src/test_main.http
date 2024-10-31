@@ -60,14 +60,14 @@ Accept: application/json
 
 ###
 
-GET http://kdbda913f9220a.user-app.krampoline.com/api/coffee/7/rule
+GET http://kdbda913f9220a.user-app.krampoline.com/api/coffee/10/rule
 Accept: application/json
 
 
 
 ###
 
-GET http://kdbda913f9220a.user-app.krampoline.com/api/coffee/history/1
+GET http://kdbda913f9220a.user-app.krampoline.com/api/coffee/10/transaction
 #GET http://127.0.0.1:8080/api/coffee/history/1
 Accept: application/json
 
