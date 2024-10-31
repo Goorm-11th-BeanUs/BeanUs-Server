@@ -9,8 +9,19 @@ POST http://kdbda913f9220a.user-app.krampoline.com/api/account/join
 Accept: application/json
 
 {
-    "user_id": "test3",
-    "password": "test3"
+    "user_id": "test4",
+    "password": "test4"
+}
+
+###
+
+POST http://kdbda913f9220a.user-app.krampoline.com/api/account/info/test3
+Accept: application/json
+
+{
+    "name": "test3_user",
+    "phone_number": "010-1112-3456",
+    "address": "제주제주제주"
 }
 
 ###
