@@ -153,6 +153,13 @@ async def health_check():
     return {"message": "I'm healthy"}
 
 
+@app.get("/api/coffee/rules", status_code=200, response_model=List[RuleRead])
+async def get_coffee_rules(db: Session = Depends(database.get_db)) -> dict:
+    rules = db.query(CollectRule).all()
+
+    return rules
+
+
 @app.get("/api/coffee/{cafe_id}/rule", status_code=200, response_model=List[RuleRead])
 async def get_coffee_rule(cafe_id: int, db: Session = Depends(database.get_db)) -> dict:
     rules = db.query(CollectRule).filter(CollectRule.cafe_id == cafe_id).all()
