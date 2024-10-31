@@ -17,8 +17,13 @@ database.Base.metadata.create_all(bind=database.engine)
 
 class UserRead(BaseModel):
     id: int
+    token: str
     name: str
-    email: str
+    address: str
+    phone_number: str
+    role: str
+    created_at: datetime
+    updated_at: datetime
 
     class Config:
         orm_mode = True
@@ -69,9 +74,9 @@ async def coffee_collect(coffee_request: CoffeeRequest) -> dict:
 
 @app.get("/api/coffee/history", status_code=200)
 async def coffee_collect(cafe_id: int) -> dict:
-    CoffeeHistory01 = CoffeeHistory(history_id=1, cafe_id=cafe_id,
-                                    request_datetime=datetime.now(tz=timezone(timedelta(hours=9))), amount=500)
-    CoffeeHistory02 = CoffeeHistory(history_id=2, cafe_id=cafe_id,
-                                    request_datetime=datetime.now(tz=timezone(timedelta(hours=9))), amount=1000)
+    coffeeHistory01 = CoffeeHistory(history_id=1, cafe_id=cafe_id,
+                                    request_datetime=datetime.now(tz=timezone(timedelta(hours=9))), amount=500 * random.randint(1, 10))
+    coffeeHistory02 = CoffeeHistory(history_id=2, cafe_id=cafe_id,
+                                    request_datetime=datetime.now(tz=timezone(timedelta(hours=9))), amount=1000 * random.randint(1, 10))
 
-    return {"history": [CoffeeHistory01, CoffeeHistory02]}
+    return {"history": [coffeeHistory01, coffeeHistory02]}

@@ -1,6 +1,6 @@
-from sqlalchemy import Column, Integer, String, DateTime
-from ..config.database import Base
 from datetime import datetime, timedelta, timezone
+from sqlalchemy import Column, Integer, String, DateTime
+from src.config.database import Base
 
 
 class User(Base):
