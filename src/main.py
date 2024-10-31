@@ -12,6 +12,19 @@ from src.model.collect_transaction import CollectTransaction
 
 app = FastAPI(version="1.0.0", docs_url="/api/swagger", redoc_url="/api/docs")
 
+
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = app.openapi()
+    openapi_schema["openapi"] = "3.1.0"  # OpenAPI 버전 설정
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi  # 커스텀 openapi 메서드 적용
+
+
 database.Base.metadata.create_all(bind=database.engine)
 
 
