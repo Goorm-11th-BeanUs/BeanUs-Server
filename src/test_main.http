@@ -5,8 +5,7 @@ Accept: application/json
 
 ###
 
-POST http://kdbda913f9220a.user-app.krampoline.com/api/coffee/collect
-#POST http://127.0.0.1:8080/api/coffee/collect
+POST http://kdbda913f9220a.user-app.krampoline.com/api/coffee/10/collect
 Accept: application/json
 
 {
@@ -45,3 +44,5 @@ Accept: application/json
 {
     "history_id": 1
 }
+
+
