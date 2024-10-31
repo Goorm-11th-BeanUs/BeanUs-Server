@@ -153,7 +153,7 @@ async def post_coffee_rule(cafe_id: int, coffee_request: CoffeeRequest, db: Sess
 
     db.commit()
 
-    return None
+    return {}
 
 
 @app.get("/api/coffee/{cafe_id}/transaction", status_code=200, response_model=List[HistoryRead])
@@ -169,7 +169,7 @@ async def coffee_history(cafe_id: int, coffee_history: CoffeeHistory, db: Sessio
                               time=coffee_history.time, amount=coffee_history.amount, status="Waiting"))
 
     db.commit()
-    return None
+    return {}
 
 
 @app.delete("/api/coffee/{cafe_id}/transaction", status_code=204)
