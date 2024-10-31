@@ -29,6 +29,13 @@ Accept: application/json
 
 ###
 
+GET http://kdbda913f9220a.user-app.krampoline.com/api/coffee/357310/rule
+Accept: application/json
+
+
+
+###
+
 GET http://kdbda913f9220a.user-app.krampoline.com/api/coffee/history/1
 #GET http://127.0.0.1:8080/api/coffee/history/1
 Accept: application/json
