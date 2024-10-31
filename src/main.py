@@ -34,6 +34,7 @@ class RuleRead(BaseModel):
     cafe_id: int
     weekday: int
     time: str
+    amount: int
 
     class Config:
         orm_mode = True
@@ -195,7 +196,7 @@ async def coffee_history(cafe_id: int, db: Session = Depends(database.get_db)) -
 
 @app.post("/api/coffee/{cafe_id}/transaction", status_code=201)
 async def coffee_history(cafe_id: int, coffee_history: CoffeeHistory, db: Session = Depends(database.get_db)) -> dict:
-    db.add(CollectTransaction(id=coffee_history.history_id, cafe_id=cafe_id, client_name=coffee_history.client_name,
+    db.add(CollectTransaction(cafe_id=cafe_id, client_name=coffee_history.client_name,
                               time=coffee_history.time, amount=coffee_history.amount, status="Waiting"))
 
     db.commit()
