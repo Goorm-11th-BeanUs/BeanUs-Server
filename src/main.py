@@ -9,6 +9,7 @@ from src.config import database
 from src.model.user import User
 from src.model.collect_rule import CollectRule
 from src.model.collect_transaction import CollectTransaction
+import httpx
 
 app = FastAPI(version="1.0.0", docs_url="/api/swagger", redoc_url="/api/docs")
 
@@ -48,6 +49,41 @@ class HistoryRead(BaseModel):
 
     class Config:
         orm_mode = True
+
+
+@app.get("/api/login/kakao/oauth", response_model=List[UserRead])
+async def login_kakao_oauth(code: str):
+    # Kakao 토큰 요청 URL
+    token_url = "https://kauth.kakao.com/oauth/token"
+
+    # 토큰 요청 파라미터
+    data = {
+        "grant_type": "authorization_code",
+        "client_id": "1153355",
+        "redirect_uri": "https://kdbda913f9220a.user-app.krampoline.com/api/login/kakao/oauth",
+        "code": code,
+    }
+
+    # 토큰 요청
+    async with httpx.AsyncClient() as client:
+        response = await client.post(token_url, data=data)
+
+    # 요청 성공 여부 확인
+    if response.status_code != 200:
+        raise HTTPException(status_code=response.status_code, detail="Failed to obtain access token")
+
+    # Access Token 정보 파싱
+    token_data = response.json()
+    access_token = token_data.get("access_token")
+    refresh_token = token_data.get("refresh_token")
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "expires_in": token_data.get("expires_in"),
+        "scope": token_data.get("scope"),
+        "token_type": token_data.get("token_type")
+    }
 
 
 @app.get("/api/users", response_model=List[UserRead])
