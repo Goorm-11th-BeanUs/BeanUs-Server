@@ -4,5 +4,5 @@ TAG = latest
 build:
 	docker build -t $(IMAGE_NAME):$(TAG) .
 
-run:
+run: build
 	docker run -it --rm -p 8080:8080 $(IMAGE_NAME):$(TAG) /bin/bash

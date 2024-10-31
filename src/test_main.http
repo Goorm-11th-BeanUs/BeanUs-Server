@@ -1,0 +1,17 @@
+# Test your FastAPI endpoints
+
+GET http://127.0.0.1:8080/health
+Accept: application/json
+
+###
+
+POST http://127.0.0.1:8080/api/coffee/collect
+Accept: application/json
+
+{
+    "cafe_id": 1,
+    "request_datetime": "2024-10-31T09:50:44.075770+09:00",
+    "amount": 500
+}
+
+###
