@@ -9,6 +9,8 @@ import random
 
 from src.config import database
 from src.model.user import User
+from src.model.collect_rule import CollectRule
+from src.model.collect_transaction import CollectTransaction
 
 app = FastAPI()
 
@@ -24,6 +26,26 @@ class UserRead(BaseModel):
     role: str
     created_at: datetime
     updated_at: datetime
+
+    class Config:
+        orm_mode = True
+
+
+class RuleRead(BaseModel):
+    cafe_id: int
+    weekday: int
+    time: str
+
+    class Config:
+        orm_mode = True
+
+
+class HistoryRead(BaseModel):
+    id: int
+    cafe_id: int
+    client_name: str
+    time: datetime
+    amount: int
 
     class Config:
         orm_mode = True
@@ -73,37 +95,67 @@ async def health_check():
     return {"message": "I'm healthy"}
 
 
+@app.get("/api/coffee/collect", status_code=200, response_model=List[RuleRead])
+async def get_coffee_rule(cafe_id: int, db: Session = Depends(database.get_db)) -> dict:
+    rules = db.query(CollectRule).filter(CollectRule.cafe_id == cafe_id).all()
+    if rules is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return rules
+
+
 @app.post("/api/coffee/collect", status_code=201)
-async def coffee_collect(coffee_request: CoffeeRequest) -> dict:
-    return {"history_id": random.randint(1, 100)}
+async def post_coffee_rule(coffee_request: CoffeeRequest, db: Session = Depends(database.get_db)) -> dict:
+    old_rules = db.query(CollectRule).filter(CollectRule.cafe_id == coffee_request.cafe_id).all()
 
+    db.delete(old_rules)
 
-@app.post("/api/coffee/cancel", status_code=204)
-async def coffee_cancel(cancel_coffee: CancelCoffee):
+    cafe_id = coffee_request.cafe_id
+    collect_days = coffee_request.collect_days
+
+    for collect_day in collect_days:
+        db.add(CollectRule(cafe_id=cafe_id, weekday=collect_day.weekday, time=collect_day.time))
+
+    db.commit()
+
     return None
 
 
-@app.get("/api/coffee/history/{cafe_id}", status_code=200)
-async def coffee_history(cafe_id: int) -> dict:
-    coffeeHistory01 = CoffeeHistory(history_id=1, client_name="abc학교",
-                                    time=datetime.now(tz=timezone(timedelta(hours=9))), state="READY"
-                                    , amount=10 * random.randint(1, 10))
-    coffeeHistory02 = CoffeeHistory(history_id=2, client_name="123시청",
-                                    time=datetime.now(tz=timezone(timedelta(hours=9))), state="QUEUED"
-                                    , amount=10 * random.randint(1, 10))
-    coffeeHistory03 = CoffeeHistory(history_id=3, client_name="ㄱㄴㄷ회사",
-                                    time=datetime.now(tz=timezone(timedelta(hours=9))), state="COMPLETED"
-                                    , amount=10 * random.randint(1, 10))
-    coffeeHistory04 = CoffeeHistory(history_id=5, client_name="ㄱㄴㄷ회사2",
-                                    time=datetime.now(tz=timezone(timedelta(hours=9))), state="COMPLETED"
-                                    , amount=10 * random.randint(1, 10))
+# transaction의 status를 변경한다
+@app.post("/api/coffee/cancel/{cafe_id}", status_code=204)
+async def coffee_cancel(cafe_id: int, cancel_coffee: CancelCoffee, db: Session = Depends(database.get_db)):
+    histories = db.query(CollectTransaction).filter(CollectTransaction.cafe_id == cafe_id,
+                                                    CollectTransaction.id == CancelCoffee.history_id).all()
 
-    res = {"histories": [coffeeHistory01, coffeeHistory02, coffeeHistory03, coffeeHistory04]}
+    db.delete(histories)
+    db.commit()
 
-    print(res)
-    return res
+    return None
+
+
+@app.get("/api/coffee/history/{cafe_id}", status_code=200, response_model=List[HistoryRead])
+async def coffee_history(cafe_id: int, db: Session = Depends(database.get_db)) -> dict:
+    histories = db.query(CollectTransaction).filter(CollectTransaction.cafe_id == cafe_id).all()
+
+    return histories
+
+
+@app.post("/api/coffee/history/{cafe_id}", status_code=201)
+async def coffee_history(cafe_id: int, coffee_history: CoffeeHistory, db: Session = Depends(database.get_db)) -> dict:
+    db.add(CollectTransaction(id=coffee_history.history_id, cafe_id=cafe_id, client_name=coffee_history.client_name,
+                              time=coffee_history.time, amount=coffee_history.amount, status="Waiting"))
+
+    db.commit()
+    return None
 
 
 @app.get("/api/coffee/carbon", status_code=200)
-async def coffee_history(cafe_id: int) -> dict:
-    return random.randint(1, 1000)
+async def carbon(cafe_id: int, db: Session = Depends(database.get_db)) -> dict:
+    histories = db.query(CollectTransaction).filter(CollectTransaction.cafe_id == cafe_id).all()
+
+    amount = 0
+
+    for history in histories:
+        amount += history.amount
+
+    return {"amount": amount}
