@@ -5,8 +5,6 @@ from pydantic import BaseModel, AwareDatetime
 from sqlalchemy.orm import Session
 from typing import List
 
-import random
-
 from src.config import database
 from src.model.user import User
 from src.model.collect_rule import CollectRule
@@ -73,7 +71,6 @@ class CollectDays(BaseModel):
 
 
 class CoffeeRequest(BaseModel):
-    cafe_id: int
     collect_days: List[CollectDays]
     amount: int
     position: str
@@ -96,7 +93,7 @@ async def health_check():
     return {"message": "I'm healthy"}
 
 
-@app.get("/api/coffee/collect", status_code=200, response_model=List[RuleRead])
+@app.get("/api/coffee/{cafe_id}/rule", status_code=200, response_model=List[RuleRead])
 async def get_coffee_rule(cafe_id: int, db: Session = Depends(database.get_db)) -> dict:
     rules = db.query(CollectRule).filter(CollectRule.cafe_id == cafe_id).all()
     if rules is None:
@@ -105,7 +102,7 @@ async def get_coffee_rule(cafe_id: int, db: Session = Depends(database.get_db)) 
     return rules
 
 
-@app.post("/api/coffee/collect", status_code=201)
+@app.post("/api/coffee/{cafe_id}/rule", status_code=201)
 async def post_coffee_rule(coffee_request: CoffeeRequest, db: Session = Depends(database.get_db)) -> dict:
     old_rules = db.query(CollectRule).filter(CollectRule.cafe_id == coffee_request.cafe_id).all()
 
@@ -122,26 +119,14 @@ async def post_coffee_rule(coffee_request: CoffeeRequest, db: Session = Depends(
     return None
 
 
-# transaction의 status를 변경한다
-@app.post("/api/coffee/cancel/{cafe_id}", status_code=204)
-async def coffee_cancel(cafe_id: int, cancel_coffee: CancelCoffee, db: Session = Depends(database.get_db)):
-    histories = db.query(CollectTransaction).filter(CollectTransaction.cafe_id == cafe_id,
-                                                    CollectTransaction.id == CancelCoffee.history_id).all()
-
-    db.delete(histories)
-    db.commit()
-
-    return None
-
-
-@app.get("/api/coffee/history/{cafe_id}", status_code=200, response_model=List[HistoryRead])
+@app.get("/api/coffee/{cafe_id}/transaction", status_code=200, response_model=List[HistoryRead])
 async def coffee_history(cafe_id: int, db: Session = Depends(database.get_db)) -> dict:
     histories = db.query(CollectTransaction).filter(CollectTransaction.cafe_id == cafe_id).all()
 
     return histories
 
 
-@app.post("/api/coffee/history/{cafe_id}", status_code=201)
+@app.post("/api/coffee/{cafe_id}/transaction", status_code=201)
 async def coffee_history(cafe_id: int, coffee_history: CoffeeHistory, db: Session = Depends(database.get_db)) -> dict:
     db.add(CollectTransaction(id=coffee_history.history_id, cafe_id=cafe_id, client_name=coffee_history.client_name,
                               time=coffee_history.time, amount=coffee_history.amount, status="Waiting"))
@@ -150,13 +135,25 @@ async def coffee_history(cafe_id: int, coffee_history: CoffeeHistory, db: Sessio
     return None
 
 
-@app.get("/api/coffee/carbon", status_code=200)
+@app.delete("/api/coffee/{cafe_id}/transaction", status_code=204)
+async def coffee_cancel(cafe_id: int, cancel_coffee: CancelCoffee, db: Session = Depends(database.get_db)):
+    histories = db.query(CollectTransaction).filter(CollectTransaction.cafe_id == cafe_id,
+                                                    CollectTransaction.id == cancel_coffee.history_id).all()
+
+    db.delete(histories)
+    db.commit()
+
+    return None
+
+
+@app.get("/api/coffee/{cafe_id}/carbon", status_code=200)
 async def carbon(cafe_id: int, db: Session = Depends(database.get_db)) -> dict:
-    histories = db.query(CollectTransaction).filter(CollectTransaction.cafe_id == cafe_id).all()
+    histories = db.query(CollectTransaction).filter(CollectTransaction.cafe_id == cafe_id
+                                                    , CollectTransaction.status == "COMPLETED").all()
 
     amount = 0
 
     for history in histories:
         amount += history.amount
 
-    return {"amount": amount}
+    return {"carbon": amount}
