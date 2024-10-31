@@ -2,17 +2,17 @@ from datetime import datetime, timezone, timedelta
 
 from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel, AwareDatetime
-# from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session
 from typing import List
 
 import random
 
-# from src.config import database
-# from src.model import User
+from src.config import database
+from src.model.user import User
 
 app = FastAPI()
 
-# database.Base.metadata.create_all(bind=database.engine)
+database.Base.metadata.create_all(bind=database.engine)
 
 
 class UserRead(BaseModel):
@@ -29,22 +29,20 @@ class UserRead(BaseModel):
         orm_mode = True
 
 
-# GET 요청으로 모든 유저 정보 가져오기
-# @app.get("/api/users/", response_model=List[UserRead])
-# def read_users(skip: int = 0, limit: int = 10, db: Session = Depends(database.get_db)):
-#     print("read_users_hi")
-#     users = db.query(User).offset(skip).limit(limit).all()
-#     return users
-#
-#
-# # 특정 유저 정보 가져오기
-# @app.get("/api/users/{user_id}", response_model=UserRead)
-# def read_user(user_id: int, db: Session = Depends(database.get_db)):
-#     print("read_user_hi")
-#     user = db.query(User).filter(User.id == user_id).first()
-#     if user is None:
-#         raise HTTPException(status_code=404, detail="User not found")
-#     return user
+@app.get("/api/users", response_model=List[UserRead])
+def read_users(skip: int = 0, limit: int = 10, db: Session = Depends(database.get_db)):
+    print("read_users_hi")
+    users = db.query(User).offset(skip).limit(limit).all()
+    return users
+
+
+@app.get("/api/users/{user_id}", response_model=UserRead)
+def read_user(user_id: int, db: Session = Depends(database.get_db)):
+    print("read_user_hi")
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
 
 
 class CollectDays(BaseModel):
@@ -104,3 +102,8 @@ async def coffee_history(cafe_id: int) -> dict:
 
     print(res)
     return res
+
+
+@app.get("/api/coffee/carbon", status_code=200)
+async def coffee_history(cafe_id: int) -> dict:
+    return random.randint(1, 1000)
