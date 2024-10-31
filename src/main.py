@@ -10,7 +10,7 @@ from src.model.user import User
 from src.model.collect_rule import CollectRule
 from src.model.collect_transaction import CollectTransaction
 
-app = FastAPI(docs_url="/api/swagger", redoc_url="/api/docs")
+app = FastAPI(version="1.0.0", docs_url="/api/swagger", redoc_url="/api/docs")
 
 database.Base.metadata.create_all(bind=database.engine)
 
