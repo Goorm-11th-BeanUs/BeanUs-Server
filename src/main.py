@@ -9,32 +9,11 @@ from src.config import database
 from src.model.user import User
 from src.model.collect_rule import CollectRule
 from src.model.collect_transaction import CollectTransaction
-import httpx
 
 app = FastAPI(version="1.0.0", docs_url="/api/swagger", redoc_url="/api/docs")
 
 
 database.Base.metadata.create_all(bind=database.engine)
-
-
-async def proxy_request(data):
-    url = "https://kauth.kakao.com/oauth/token"
-    proxy_url = "http://krmp-proxy.9rum.cc:3128"
-
-    async with httpx.AsyncClient(proxies=proxy_url, follow_redirects=True) as client:
-        response = await client.post(url, data=data)
-        return {"status_code": response.status_code, "content": response.text}
-
-
-def verify_token(token: str = Cookie(None), db: Session = Depends(database.get_db)):
-    if token is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token missing")
-
-    # DB에서 token을 확인하는 쿼리
-    token_entry = db.query(User).filter(User.token == token).first()
-
-    if token_entry is None:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid token")
 
 
 class UserRead(BaseModel):
@@ -71,48 +50,62 @@ class HistoryRead(BaseModel):
         orm_mode = True
 
 
-@app.get("/api/login/kakao/oauth", response_model=List[UserRead])
-async def login_kakao_oauth(code: str, db: Session = Depends(database.get_db)):
-    # Kakao 토큰 요청 URL
-    token_url = "https://kauth.kakao.com/oauth/token"
+class AccountRequest(BaseModel):
+    user_id: str
+    password: str
 
-    # 토큰 요청 파라미터
-    data = {
-        "grant_type": "authorization_code",
-        "client_id": "1153355",
-        "redirect_uri": "https://kdbda913f9220a.user-app.krampoline.com/api/login/kakao/oauth",
-        "code": code,
-    }
 
-    url = "https://kauth.kakao.com/oauth/token"
-    proxy_url = "http://krmp-proxy.9rum.cc:3128"
+class AccountOtherInfo(BaseModel):
+    name: str
+    phone_number: str
+    address: str
 
-    async with httpx.AsyncClient(proxies=proxy_url, follow_redirects=True) as client:
-        response = await client.post(url, data=data)
 
-    # 요청 성공 여부 확인
-    if response.status_code != 200:
-        raise HTTPException(status_code=response.status_code, detail="Failed to obtain access token")
+@app.post("/api/account/join", status_code=200)
+async def account_join(account_request: AccountRequest, db: Session = Depends(database.get_db)) -> dict:
+    user = db.query(User).filter(User.id == account_request.user_id).first()
 
-    # Access Token 정보 파싱
-    token_data = response.json()
-    access_token = token_data.get("access_token")
-    refresh_token = token_data.get("refresh_token")
+    if user:
+        raise HTTPException(status_code=403, detail="id already exists")
 
-    new_user = User(token=access_token)
-    db.add(new_user)
+    db.add(User(id=account_request.user_id, password=account_request.password))
     db.commit()
 
-    saved_user = db.query(User).filter(User.token == access_token).first()
+    user = db.query(User).filter(User.id == account_request.user_id).first()
 
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "expires_in": token_data.get("expires_in"),
-        "scope": token_data.get("scope"),
-        "token_type": token_data.get("token_type"),
-        "cafe_id": saved_user.id
-    }
+    return {"msg": f"{account_request.user_id} 님, 환영합니다!", "cafe_id": user.cafe_id}
+
+
+@app.post("/api/account/login", status_code=200)
+async def account_login(account_request: AccountRequest, db: Session = Depends(database.get_db)) -> dict:
+    user = db.query(User).filter(User.id == account_request.user_id
+                                 , User.password == account_request.password).first()
+
+    if user is None:
+        raise HTTPException(status_code=404, detail="not found")
+
+    if user.name and user.phone_number and user.address:
+        return {"msg": f"{account_request.user_id} 님, 어서오세요!", "cafe_id": user.cafe_id}
+
+    raise HTTPException(status_code=401, detail="unauthorized")
+
+
+@app.post("/api/account/info/{user_id}", status_code=201)
+async def account_join(user_id: str, other_info: AccountOtherInfo, db: Session = Depends(database.get_db)) -> dict:
+    user = db.query(User).filter(User.id == user_id).first()
+
+    if user is None:
+        raise HTTPException(status_code=404, detail="not found")
+
+    user.name = other_info.name
+    user.phone_number = other_info.phone_number
+    user.address = other_info.address
+
+    db.commit()
+    db.refresh(user)
+
+    return {"msg": f"{user_id} 님, 정보 업데이트 완료!", "cafe_id": user.cafe_id}
+
 
 
 @app.get("/api/users", response_model=List[UserRead])
@@ -159,7 +152,7 @@ async def health_check():
     return {"message": "I'm healthy"}
 
 
-@app.get("/api/coffee/{cafe_id}/rule", status_code=200, response_model=List[RuleRead], dependencies=[Depends(verify_token)])
+@app.get("/api/coffee/{cafe_id}/rule", status_code=200, response_model=List[RuleRead])
 async def get_coffee_rule(cafe_id: int, db: Session = Depends(database.get_db)) -> dict:
     rules = db.query(CollectRule).filter(CollectRule.cafe_id == cafe_id).all()
     if rules is None:
@@ -168,7 +161,7 @@ async def get_coffee_rule(cafe_id: int, db: Session = Depends(database.get_db)) 
     return rules
 
 
-@app.post("/api/coffee/{cafe_id}/rule", status_code=201, dependencies=[Depends(verify_token)])
+@app.post("/api/coffee/{cafe_id}/rule", status_code=201)
 async def post_coffee_rule(cafe_id: int, coffee_request: CoffeeRequest, db: Session = Depends(database.get_db)) -> dict:
     # old_rules = db.query(CollectRule).filter(CollectRule.cafe_id == cafe_id).all()
     #
@@ -185,14 +178,14 @@ async def post_coffee_rule(cafe_id: int, coffee_request: CoffeeRequest, db: Sess
     return {}
 
 
-@app.get("/api/coffee/{cafe_id}/transaction", status_code=200, response_model=List[HistoryRead], dependencies=[Depends(verify_token)])
+@app.get("/api/coffee/{cafe_id}/transaction", status_code=200, response_model=List[HistoryRead])
 async def coffee_history(cafe_id: int, db: Session = Depends(database.get_db)) -> dict:
     histories = db.query(CollectTransaction).filter(CollectTransaction.cafe_id == cafe_id).all()
 
     return histories
 
 
-@app.post("/api/coffee/{cafe_id}/transaction", status_code=201, dependencies=[Depends(verify_token)])
+@app.post("/api/coffee/{cafe_id}/transaction", status_code=201)
 async def coffee_history(cafe_id: int, coffee_history: CoffeeHistory, db: Session = Depends(database.get_db)) -> dict:
     db.add(CollectTransaction(id=coffee_history.history_id, cafe_id=cafe_id, client_name=coffee_history.client_name,
                               time=coffee_history.time, amount=coffee_history.amount, status="Waiting"))
@@ -201,7 +194,7 @@ async def coffee_history(cafe_id: int, coffee_history: CoffeeHistory, db: Sessio
     return {}
 
 
-@app.delete("/api/coffee/{cafe_id}/transaction", status_code=204, dependencies=[Depends(verify_token)])
+@app.delete("/api/coffee/{cafe_id}/transaction", status_code=204)
 async def coffee_cancel(cafe_id: int, cancel_coffee: CancelCoffee, db: Session = Depends(database.get_db)):
     histories = db.query(CollectTransaction).filter(CollectTransaction.cafe_id == cafe_id,
                                                     CollectTransaction.id == cancel_coffee.history_id).all()
@@ -212,7 +205,7 @@ async def coffee_cancel(cafe_id: int, cancel_coffee: CancelCoffee, db: Session =
     return None
 
 
-@app.get("/api/coffee/{cafe_id}/carbon", status_code=200, dependencies=[Depends(verify_token)])
+@app.get("/api/coffee/{cafe_id}/carbon", status_code=200)
 async def carbon(cafe_id: int, db: Session = Depends(database.get_db)) -> dict:
     histories = db.query(CollectTransaction).filter(CollectTransaction.cafe_id == cafe_id
                                                     , CollectTransaction.status == "COMPLETED").all()
