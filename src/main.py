@@ -7,12 +7,12 @@ from typing import List
 
 import random
 
-from config import database
-import model
+from src.config import database
+from src.model import User
 
 app = FastAPI()
 
-Base.metadata.create_all(bind=database.engine)
+database.Base.metadata.create_all(bind=database.engine)
 
 
 class UserRead(BaseModel):
@@ -27,14 +27,14 @@ class UserRead(BaseModel):
 # GET 요청으로 모든 유저 정보 가져오기
 @app.get("api/users/", response_model=List[UserRead])
 def read_users(skip: int = 0, limit: int = 10, db: Session = Depends(database.get_db)):
-    users = db.query(model.User).offset(skip).limit(limit).all()
+    users = db.query(User).offset(skip).limit(limit).all()
     return users
 
 
 # 특정 유저 정보 가져오기
 @app.get("api/users/{user_id}", response_model=UserRead)
 def read_user(user_id: int, db: Session = Depends(database.get_db)):
-    user = db.query(model.User).filter(model.User.id == user_id).first()
+    user = db.query(User).filter(User.id == user_id).first()
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return user
