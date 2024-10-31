@@ -6,8 +6,8 @@ from sqlalchemy.orm import sessionmaker
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# db_config = {"user": 'root', "password": 'root', "host": 'mariadb', "port": '3306', "database": 'goorm'}
-db_config = {"user": 'root', "password": 'root', "host": '127.0.0.1', "port": '3306', "database": 'goorm'}
+db_config = {"user": 'root', "password": 'root', "host": 'mariadb', "port": '3306', "database": 'goorm'}
+# db_config = {"user": 'root', "password": 'root', "host": '127.0.0.1', "port": '3306', "database": 'goorm'}
 
 SQLALCHEMY_DATABASE_URL = f"mysql+pymysql://{db_config.get('user')}:{db_config.get('password')}@{db_config.get('host')}:{db_config.get('port')}/{db_config.get('database')}?charset=utf8"
 
