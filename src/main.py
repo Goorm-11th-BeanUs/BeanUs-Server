@@ -140,8 +140,8 @@ async def get_coffee_rule(cafe_id: int, db: Session = Depends(database.get_db)) 
 
 
 @app.post("/api/coffee/{cafe_id}/rule", status_code=201)
-async def post_coffee_rule(coffee_request: CoffeeRequest, db: Session = Depends(database.get_db)) -> dict:
-    old_rules = db.query(CollectRule).filter(CollectRule.cafe_id == coffee_request.cafe_id).all()
+async def post_coffee_rule(cafe_id: int, coffee_request: CoffeeRequest, db: Session = Depends(database.get_db)) -> dict:
+    old_rules = db.query(CollectRule).filter(CollectRule.cafe_id == cafe_id).all()
 
     db.delete(old_rules)
 

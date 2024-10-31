@@ -5,11 +5,10 @@ Accept: application/json
 
 ###
 
-POST http://kdbda913f9220a.user-app.krampoline.com/api/coffee/10/collect
+POST http://kdbda913f9220a.user-app.krampoline.com/api/coffee/10/rule
 Accept: application/json
 
 {
-    "cafe_id": 1,
     "collect_days": [
         {
             "weekday": 1,
@@ -24,7 +23,8 @@ Accept: application/json
             "time": "0900"
         }
     ],
-    "amount": 500
+    "amount": 500,
+    "position": "문 밖"
 }
 
 ###
