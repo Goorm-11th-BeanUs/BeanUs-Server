@@ -76,6 +76,7 @@ class CoffeeRequest(BaseModel):
     cafe_id: int
     collect_days: List[CollectDays]
     amount: int
+    position: str
 
 
 class CoffeeHistory(BaseModel):

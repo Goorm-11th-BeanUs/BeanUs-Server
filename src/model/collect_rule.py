@@ -11,6 +11,7 @@ class CollectRule(Base):
     weekday = Column(Integer, primary_key=False, index=False)
     time = Column(String(5), index=False)
     amount = Column(Integer, index=False)
+    position = Column(String(100), index=False)
     created_at = Column(DateTime, default=datetime.now(timezone(timedelta(hours=9))))
     updated_at = Column(DateTime, default=datetime.now(timezone(timedelta(hours=9))))
 
