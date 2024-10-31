@@ -146,7 +146,6 @@ async def post_coffee_rule(cafe_id: int, coffee_request: CoffeeRequest, db: Sess
     # for old_rule in old_rules:
     #     db.delete(old_rule)
 
-    cafe_id = coffee_request.cafe_id
     collect_days = coffee_request.collect_days
 
     for collect_day in collect_days:
