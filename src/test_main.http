@@ -5,13 +5,43 @@ Accept: application/json
 
 ###
 
+#POST http://kdbda913f9220a.user-app.krampoline.com/api/coffee/collect
 POST http://127.0.0.1:8080/api/coffee/collect
 Accept: application/json
 
 {
     "cafe_id": 1,
-    "request_datetime": "2024-10-31T09:50:44.075770+09:00",
+    "collect_days": [
+        {
+            "weekday": 1,
+            "time": "0900"
+        },
+        {
+            "weekday": 2,
+            "time": "0900"
+        },
+        {
+            "weekday": 4,
+            "time": "0900"
+        }
+    ],
     "amount": 500
 }
 
 ###
+
+#GET http://kdbda913f9220a.user-app.krampoline.com/api/coffee/history/1
+GET http://127.0.0.1:8080/api/coffee/history/1
+Accept: application/json
+
+
+###
+
+
+#POST http://kdbda913f9220a.user-app.krampoline.com/api/coffee/cancel
+POST http://127.0.0.1:8080/api/coffee/cancel
+Accept: application/json
+
+{
+    "history_id": 1
+}
