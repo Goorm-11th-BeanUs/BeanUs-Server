@@ -171,8 +171,8 @@ async def post_coffee_rule(cafe_id: int, coffee_request: CoffeeRequest, db: Sess
 
 
 @app.get("/api/coffee/{cafe_id}/transaction", status_code=200, response_model=List[HistoryRead])
-async def coffee_history(cafe_id: int, db: Session = Depends(database.get_db)) -> dict:
-    histories = db.query(CollectTransaction).filter(CollectTransaction.cafe_id == cafe_id).all()
+async def coffee_history(cafe_id: object, db: Session = Depends(database.get_db)) -> dict:
+    histories = db.query(CollectTransaction).filter(CollectTransaction.cafe_id == 10).all()
 
     return histories
 
