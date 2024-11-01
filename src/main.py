@@ -109,23 +109,6 @@ async def account_join(user_id: str, other_info: AccountOtherInfo, db: Session =
     return {"msg": f"{user_id} 님, 정보 업데이트 완료!", "cafe_id": user.cafe_id}
 
 
-
-@app.get("/api/users", response_model=List[UserRead])
-def read_users(skip: int = 0, limit: int = 10, db: Session = Depends(database.get_db)):
-    print("read_users_hi")
-    users = db.query(User).offset(skip).limit(limit).all()
-    return users
-
-
-@app.get("/api/users/{user_id}", response_model=UserRead)
-def read_user(user_id: int, db: Session = Depends(database.get_db)):
-    print("read_user_hi")
-    user = db.query(User).filter(User.id == user_id).first()
-    if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
-
-
 class CollectDays(BaseModel):
     weekday: int
     time: str
@@ -141,7 +124,7 @@ class CoffeeHistory(BaseModel):
     history_id: int
     client_name: str
     time: AwareDatetime
-    state: str
+    status: str
     amount: int
 
 
@@ -224,4 +207,4 @@ async def carbon(cafe_id: int, db: Session = Depends(database.get_db)) -> dict:
     for history in histories:
         amount += history.amount
 
-    return {"carbon": amount}
+    return {"carbon": amount * 100}
